@@ -1,4 +1,5 @@
 .idea
 .private
-*.exe
-*.syso
+/*.exe
+/*.syso
+/_testdata/tmp
