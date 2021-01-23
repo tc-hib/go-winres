@@ -264,7 +264,7 @@ Here is an example JSON file containing every standard info field, a French tran
 
 ## Alternatives
 
-This project is a shameful rewrite of [akavel/rsrc](https://www.github.com/akavel/rsrc/)
+This project is similar to [akavel/rsrc](https://www.github.com/akavel/rsrc/)
 and [josephspurrier/goversioninfo](https://github.com/josephspurrier/goversioninfo).
 
 Additional features are:

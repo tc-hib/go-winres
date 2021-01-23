@@ -119,6 +119,7 @@ func exportResources(jsonName string, rs *winres.ResourceSet, manifestInJSON boo
 				printError(err)
 				return true
 			}
+			res[t][r][l] = filepath.Base(filename)
 			return true
 		case winres.RT_VERSION:
 			vi, err := version.FromBytes(data)
@@ -387,7 +388,7 @@ func exportedName(first bool, typeID, resID winres.Identifier, langID uint16) st
 }
 
 func importResources(rs *winres.ResourceSet, jsonName string) error {
-	dirName := filepath.Dir(jsonName)
+	dir := filepath.Dir(jsonName)
 	b, err := ioutil.ReadFile(jsonName)
 	if err != nil {
 		return err
@@ -408,7 +409,7 @@ func importResources(rs *winres.ResourceSet, jsonName string) error {
 				}
 				switch typeID {
 				case winres.RT_GROUP_CURSOR:
-					cursor, err := loadCursor(res)
+					cursor, err := loadCursor(dir, res)
 					if err != nil {
 						return err
 					}
@@ -417,7 +418,7 @@ func importResources(rs *winres.ResourceSet, jsonName string) error {
 						return err
 					}
 				case winres.RT_GROUP_ICON:
-					icon, err := loadIcon(res)
+					icon, err := loadIcon(dir, res)
 					if err != nil {
 						return err
 					}
@@ -438,7 +439,7 @@ func importResources(rs *winres.ResourceSet, jsonName string) error {
 					if !ok {
 						return errors.New(errInvalidSet)
 					}
-					dib, err := loadBMP(filepath.Join(dirName, filename))
+					dib, err := loadBMP(filepath.Join(dir, filename))
 					if err != nil {
 						return err
 					}
@@ -459,7 +460,7 @@ func importResources(rs *winres.ResourceSet, jsonName string) error {
 					if !ok {
 						return errors.New(errInvalidSet)
 					}
-					data, err := ioutil.ReadFile(filepath.Join(dirName, filename))
+					data, err := ioutil.ReadFile(filepath.Join(dir, filename))
 					if err != nil {
 						return err
 					}
@@ -475,10 +476,10 @@ func importResources(rs *winres.ResourceSet, jsonName string) error {
 	return nil
 }
 
-func loadCursor(c interface{}) (*winres.Cursor, error) {
+func loadCursor(dir string, c interface{}) (*winres.Cursor, error) {
 	switch c := c.(type) {
 	case string:
-		return loadCUR(c)
+		return loadCUR(filepath.Join(dir, c))
 
 	case []interface{}:
 		var images []winres.CursorImage
@@ -487,7 +488,7 @@ func loadCursor(c interface{}) (*winres.Cursor, error) {
 			if !ok {
 				return nil, errors.New(errInvalidCursor)
 			}
-			curImg, err := loadCursorImage(o)
+			curImg, err := loadCursorImage(dir, o)
 			if err != nil {
 				return nil, err
 			}
@@ -496,7 +497,7 @@ func loadCursor(c interface{}) (*winres.Cursor, error) {
 		return winres.NewCursorFromImages(images)
 
 	case map[string]interface{}:
-		curImg, err := loadCursorImage(c)
+		curImg, err := loadCursorImage(dir, c)
 		if err != nil {
 			return nil, err
 		}
@@ -506,7 +507,7 @@ func loadCursor(c interface{}) (*winres.Cursor, error) {
 	return nil, errors.New(errInvalidCursor)
 }
 
-func loadCursorImage(c map[string]interface{}) (winres.CursorImage, error) {
+func loadCursorImage(dir string, c map[string]interface{}) (winres.CursorImage, error) {
 	x, xOK := c["x"].(float64)
 	y, yOK := c["y"].(float64)
 	f, fOK := c["image"].(string)
@@ -514,7 +515,7 @@ func loadCursorImage(c map[string]interface{}) (winres.CursorImage, error) {
 		return winres.CursorImage{}, errors.New(errInvalidCursor)
 	}
 
-	img, err := loadImage(f)
+	img, err := loadImage(filepath.Join(dir, f))
 	if err != nil {
 		return winres.CursorImage{}, err
 	}
@@ -525,13 +526,13 @@ func loadCursorImage(c map[string]interface{}) (winres.CursorImage, error) {
 	}, nil
 }
 
-func loadIcon(x interface{}) (*winres.Icon, error) {
+func loadIcon(dir string, x interface{}) (*winres.Icon, error) {
 	switch x := x.(type) {
 	case string:
 		if strings.ToLower(filepath.Ext(x)) == ".ico" {
 			return loadICO(x)
 		}
-		img, err := loadImage(x)
+		img, err := loadImage(filepath.Join(dir, x))
 		if err != nil {
 			return nil, err
 		}
@@ -543,7 +544,7 @@ func loadIcon(x interface{}) (*winres.Icon, error) {
 			if !ok {
 				return nil, errors.New(errInvalidIcon)
 			}
-			img, err := loadImage(f)
+			img, err := loadImage(filepath.Join(dir, f))
 			if err != nil {
 				return nil, err
 			}
