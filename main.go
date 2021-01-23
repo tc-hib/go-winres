@@ -67,7 +67,7 @@ func main() {
 	commonMakeFlags := append([]cli.Flag{
 		&cli.StringFlag{
 			Name:    flagArch,
-			Usage:   "comma separated list of target architectures such as amd64,386,arm,arm64",
+			Usage:   "comma separated list of target architectures",
 			Value:   defaultArch,
 			EnvVars: []string{"GOARCH"},
 		},
@@ -140,6 +140,7 @@ func main() {
 					&cli.StringFlag{
 						Name:      flagIconFile,
 						Usage:     "icon file (ico, png, ...)",
+						Value:     defaultIconFile,
 						TakesFile: true,
 					},
 				}...),

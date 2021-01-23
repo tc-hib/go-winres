@@ -72,9 +72,9 @@ var typeIDFromString = map[string]winres.ID{
 	"RT_MANIFEST":     winres.RT_MANIFEST,
 }
 
-func exportResources(jsonName string, rs *winres.ResourceSet, manifestInJSON bool) {
+func exportResources(dir string, rs *winres.ResourceSet, manifestInJSON bool) {
 	res := jsonDef{}
-	dirName := filepath.Dir(jsonName)
+	jsonName := filepath.Join(dir, "winres.json")
 
 	rs.Walk(func(typeID, resID winres.Identifier, langID uint16, data []byte) bool {
 		switch typeID {
@@ -83,7 +83,7 @@ func exportResources(jsonName string, rs *winres.ResourceSet, manifestInJSON boo
 		}
 
 		t, r, l := idsToStrings(typeID, resID, langID)
-		filename := filepath.Join(dirName, exportedName(res[t] == nil, typeID, resID, langID))
+		filename := filepath.Join(dir, exportedName(res[t] == nil, data, typeID, resID, langID))
 
 		if res[t] == nil {
 			res[t] = make(map[string]map[string]interface{})
@@ -351,7 +351,7 @@ func stringToIdentifier(s string) winres.Identifier {
 	return winres.Name(s)
 }
 
-func exportedName(first bool, typeID, resID winres.Identifier, langID uint16) string {
+func exportedName(first bool, data []byte, typeID, resID winres.Identifier, langID uint16) string {
 	ext := "bin"
 	t, r, l := idsToStrings(typeID, resID, langID)
 	switch typeID {
@@ -380,6 +380,14 @@ func exportedName(first bool, typeID, resID winres.Identifier, langID uint16) st
 		}
 		t = "info"
 		ext = "json"
+	}
+	if ext == "bin" {
+		if string(data[:8]) == "\x89PNG\r\n\x1a\n" {
+			_, s, _ := image.DecodeConfig(bytes.NewReader(data))
+			if s == "png" {
+				ext = "png"
+			}
+		}
 	}
 	if t == "" {
 		return fmt.Sprintf("%s_%s.%s", r, l, ext)
