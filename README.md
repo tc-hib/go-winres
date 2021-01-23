@@ -29,15 +29,31 @@ Typical usage would be:
 
 `go-winres make` creates files named `rsrc_windows_*.syso` that `go build` automatically embeds in the executable.
 
-The suffix `_windows_amd64` is very important. Thanks to it, `go build` knows it should not be used for Linux or ARM.
+The suffix `_windows_amd64` is very important.
+Thanks to it, `go build` knows it should not include that object in a Linux or 386 build.
+
+### Automatic version from git
+
+The `--file-version` and `--product-version` flags can take a special value: `git-tag`.
+This will retrieve the current tag with `git describe --tags` and add it to the file properties of the executable.
+
+### `go generate`
+
+You can use a `//go:generate` comment as well:
+
+```
+//go:generate go-winres make --product-version=git-tag
+```
+
+### Subcommands
 
 There are other subcommands:
 
 * `go-winres simply` is a simpler `make` that does not rely on a json file.
-* `go-winres extract` extracts resources from an `exe` or a `dll`
-* `go-winres replace` replaces resources directly in an `exe` or a `dll`
-    * For example, to make a 7z SFX cooler, you may change its icon, and add a manifest to make it look better on high
-      DPI screens
+* `go-winres extract` extracts resources from an `exe` or a `dll`.
+* `go-winres replace` replaces resources directly in an `exe` or a `dll`.
+  For example, to enhance a 7z self extracting archive, you may change its icon,
+  and add a manifest to make it look better on high DPI screens.
 
 ## JSON format
 

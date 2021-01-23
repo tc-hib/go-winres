@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -48,19 +49,21 @@ const (
 	manifestNone = "none"
 	manifestCLI  = "cli"
 	manifestGUI  = "gui"
+
+	gitTag = "git-tag"
 )
 
-//go:generate go run github.com/tc-hib/go-winres make
+//go:generate go-winres make --product-version=git-tag
 
 func main() {
 	versionFlags := []cli.Flag{
 		&cli.StringFlag{
 			Name:  flagProductVersion,
-			Usage: "set product version (overrides the json file)",
+			Usage: `set product version (special value: "` + gitTag + `")`,
 		},
 		&cli.StringFlag{
 			Name:  flagFileVersion,
-			Usage: "set file version (overrides the json file)",
+			Usage: `set file version (special value: "` + gitTag + `")`,
 		},
 	}
 
@@ -464,6 +467,24 @@ func setVersions(rs *winres.ResourceSet, ctx *cli.Context) error {
 		return nil
 	}
 
+	var tag string
+	if fileVersion == gitTag || prodVersion == gitTag {
+		w := strings.Builder{}
+		cmd := exec.Command("git", "describe", "--tags")
+		cmd.Stdout = &w
+		err := cmd.Run()
+		if err != nil {
+			return err
+		}
+		tag = strings.TrimSpace(w.String())
+	}
+	if fileVersion == gitTag {
+		fileVersion = tag
+	}
+	if prodVersion == gitTag {
+		prodVersion = tag
+	}
+
 	var (
 		err  error
 		done bool
@@ -482,6 +503,8 @@ func setVersions(rs *winres.ResourceSet, ctx *cli.Context) error {
 		if prodVersion != "" {
 			vi.SetProductVersion(prodVersion)
 		}
+
+		rs.SetVersionInfo(*vi)
 
 		done = true
 
