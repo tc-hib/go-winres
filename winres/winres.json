@@ -2,7 +2,9 @@
   "RT_GROUP_ICON": {
     "APP": {
       "0000": [
-        "icon.png",
+        "icon256.png",
+        "icon128.png",
+        "icon64.png",
         "icon16.png"
       ]
     }
@@ -29,6 +31,21 @@
         "gdi-scaling": false,
         "segment-heap": false,
         "use-common-controls-v6": false
+      }
+    }
+  },
+  "RT_VERSION": {
+    "#1": {
+      "0409": {
+        "info": {
+          "0409": {
+            "FileDescription": "go-winres command line tool",
+            "InternalName": "go-winres",
+            "LegalCopyright": "© Thomas Combeléran",
+            "OriginalFilename": "go-winres.exe",
+            "ProductName": "go-winres"
+          }
+        }
       }
     }
   }
