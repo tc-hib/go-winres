@@ -74,6 +74,16 @@ func main() {
 			Value:   defaultArch,
 			EnvVars: []string{"GOARCH"},
 		},
+		&cli.StringFlag{
+			Name:  flagOutput,
+			Usage: "name or prefix of the object file (syso)",
+			Value: "rsrc",
+		},
+		&cli.BoolFlag{
+			Name:  flagNoSuffix,
+			Usage: "don't add target suffixes such as \"_windows_386\"",
+			Value: false,
+		},
 	}, versionFlags...)
 
 	app := cli.App{
@@ -95,16 +105,6 @@ func main() {
 						Usage:     "name of the input json file",
 						Value:     defaultJSONFile,
 						TakesFile: true,
-					},
-					&cli.StringFlag{
-						Name:  flagOutput,
-						Usage: "name or prefix of the object file (syso)",
-						Value: "rsrc",
-					},
-					&cli.BoolFlag{
-						Name:  flagNoSuffix,
-						Usage: "don't add target suffixes such as \"_windows_386\"",
-						Value: false,
 					},
 				},
 					commonMakeFlags...),
@@ -175,7 +175,7 @@ func main() {
 				Name:   "replace",
 				Usage:  "Replace resources in an executable",
 				Action: cmdReplace,
-				Flags: []cli.Flag{
+				Flags: append([]cli.Flag{
 					&cli.StringFlag{
 						Name:      flagOutput,
 						Usage:     "name of the executable file (exe, dll)",
@@ -197,7 +197,7 @@ func main() {
 						Usage: "don't leave a copy of the original executable",
 						Value: false,
 					},
-				},
+				}, versionFlags...),
 			},
 		},
 	}
@@ -327,12 +327,17 @@ func cmdReplace(ctx *cli.Context) error {
 		rs = &winres.ResourceSet{}
 	} else {
 		rs, err = winres.LoadFromEXE(in)
-		if err != nil {
+		if err != nil && err != winres.ErrNoResources {
 			return err
 		}
 	}
 
 	err = importResources(rs, ctx.String(flagInput))
+	if err != nil {
+		return err
+	}
+
+	err = setVersions(rs, ctx)
 	if err != nil {
 		return err
 	}
@@ -348,6 +353,7 @@ func cmdReplace(ctx *cli.Context) error {
 		return err
 	}
 
+	in.Close()
 	err = out.Close()
 	if err != nil {
 		return err
@@ -517,8 +523,12 @@ func setVersions(rs *winres.ResourceSet, ctx *cli.Context) error {
 
 	if !done {
 		vi := version.Info{}
-		vi.SetFileVersion(fileVersion)
-		vi.SetProductVersion(fileVersion)
+		if fileVersion != "" {
+			vi.SetFileVersion(fileVersion)
+		}
+		if prodVersion != "" {
+			vi.SetProductVersion(prodVersion)
+		}
 		rs.SetVersionInfo(vi)
 	}
 

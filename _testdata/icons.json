@@ -1,0 +1,43 @@
+{
+    "RT_GROUP_ICON": {
+        "APP": {
+            "0000": [
+                "cur-32x64.png",
+                "cur-64x128.png"
+            ]
+        },
+        "#42": {
+            "040C": "fr.ico",
+            "0409": "en.ico"
+        },
+        "#1": {
+            "0000": "../icon.png"
+        }
+    },
+    "RT_GROUP_CURSOR": {
+        "ARROW": {
+            "0000": {
+                "x": 58,
+                "y": 34,
+                "image": "cur-64x128.png"
+            }
+        },
+        "ARROW2": {
+            "0000": [
+                {
+                    "x": 29,
+                    "y": 17,
+                    "image": "cur-32x64.png"
+                },
+                {
+                    "x": 58,
+                    "y": 34,
+                    "image": "cur-64x128.png"
+                }
+            ]
+        },
+        "ARROW3": {
+            "0000": "cursor.cur"
+        }
+    }
+}

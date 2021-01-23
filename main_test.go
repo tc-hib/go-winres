@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -160,6 +161,141 @@ func Test_Extract(t *testing.T) {
 	}
 	checkFile(t, "_testdata/tmp/#1_0000.manifest", []byte{0x21, 0x19, 0x26, 0x2f, 0x8a, 0x5b, 0x5f, 0x64, 0x0e, 0x6e, 0xe7, 0x01, 0x20, 0xdb, 0xd2, 0x05})
 	os.RemoveAll("_testdata/tmp")
+}
+
+func Test_Replace(t *testing.T) {
+	a := os.Args
+	defer func() { os.Args = a }()
+
+	copyFile(t, "_testdata/vs0.exe", "_testdata/tmp/temp.exe")
+	os.Args = []string{"./go-winres.exe", "replace", "--in", "_testdata/icons.json", "--out", "_testdata/tmp/temp.exe", "--product-version", "1.2.3.4"}
+	main()
+	checkFile(t, "_testdata/tmp/temp.exe", []byte{0x50, 0x55, 0x11, 0x9e, 0x38, 0x55, 0x83, 0x72, 0x3e, 0x62, 0xa1, 0xa2, 0x0a, 0xf5, 0xed, 0x5b})
+	checkFile(t, "_testdata/tmp/temp.exe.bak", []byte{0x29, 0x13, 0xa7, 0xc5, 0x4a, 0xf9, 0x47, 0xef, 0xd6, 0x4f, 0x37, 0xc5, 0x62, 0xba, 0xd4, 0x39})
+
+	os.RemoveAll("_testdata/tmp")
+}
+
+func Test_Add(t *testing.T) {
+	a := os.Args
+	defer func() { os.Args = a }()
+
+	copyFile(t, "_testdata/rh.exe", "_testdata/tmp/temp.exe")
+	os.Args = []string{"./go-winres.exe", "replace", "--in", "_testdata/icons.json", "--out", "_testdata/tmp/temp.exe", "--no-backup"}
+	main()
+	checkFile(t, "_testdata/tmp/temp.exe", []byte{0x08, 0x05, 0x43, 0x1d, 0x55, 0x88, 0x65, 0x30, 0xb2, 0x1f, 0xea, 0xda, 0xe9, 0xf5, 0x3b, 0x4e})
+	if _, err := os.Stat("_testdata/tmp/temp.exe.bak"); err == nil {
+		t.Error("temp.exe.bak should not exist")
+	}
+
+	os.RemoveAll("_testdata/tmp")
+}
+
+func Test_DeleteAdd(t *testing.T) {
+	a := os.Args
+	defer func() { os.Args = a }()
+
+	copyFile(t, "_testdata/rh.exe", "_testdata/tmp/temp.exe")
+	os.Args = []string{"./go-winres.exe", "replace", "--in", "_testdata/test.json", "--out", "_testdata/tmp/temp.exe", "--delete", "--file-version", "1.2"}
+	main()
+	checkFile(t, "_testdata/tmp/temp.exe", []byte{0x60, 0xa6, 0x65, 0x1e, 0xfb, 0xca, 0x4f, 0x60, 0xde, 0x93, 0x0d, 0x78, 0x41, 0x3b, 0x45, 0x70})
+	checkFile(t, "_testdata/tmp/temp.exe.bak", []byte{0x79, 0xbc, 0x0f, 0x27, 0x2b, 0x3f, 0x82, 0x69, 0xfa, 0xc1, 0x42, 0x1d, 0xc7, 0xdb, 0x68, 0x6c})
+
+	os.RemoveAll("_testdata/tmp")
+}
+
+func Test_Simply(t *testing.T) {
+	a := os.Args
+	defer func() { os.Args = a }()
+
+	os.Args = []string{
+		"./go-winres.exe",
+		"simply",
+		"--arch",
+		" amd64, 386 , arm, arm64 ",
+		"--out",
+		"_testdata/tmp/simply",
+		"--product-version",
+		"v42.5.3.8 alpha",
+		"--file-version",
+		"1.2.3.4.5.6.7",
+		"--manifest",
+		"gui",
+		"--admin",
+		"--file-description",
+		"description",
+		"--product-name",
+		"Product name",
+		"--copyright",
+		"©",
+		"--original-filename",
+		"xxx.exe",
+		"--icon",
+		"_testdata/fr.ico",
+	}
+	err := os.MkdirAll("_testdata/tmp", 0666)
+	if err != nil {
+		t.Fatal(err)
+	}
+	main()
+	checkFile(t, "_testdata/tmp/simply_windows_arm64.syso", []byte{0xb1, 0x1b, 0x8f, 0x79, 0xea, 0xac, 0x72, 0xae, 0x0e, 0x8a, 0xa6, 0xf2, 0x2c, 0x61, 0x10, 0x8d})
+	checkFile(t, "_testdata/tmp/simply_windows_arm.syso", []byte{0x66, 0xe5, 0x83, 0xd1, 0x62, 0xe8, 0x51, 0x10, 0xb1, 0x2e, 0x5b, 0xdc, 0x57, 0x23, 0xd9, 0x8c})
+	checkFile(t, "_testdata/tmp/simply_windows_amd64.syso", []byte{0xc4, 0xfe, 0x6e, 0x34, 0xb2, 0xe5, 0x9e, 0x93, 0x00, 0xf7, 0x1f, 0x5a, 0x62, 0x9b, 0xea, 0x37})
+	checkFile(t, "_testdata/tmp/simply_windows_386.syso", []byte{0xa0, 0x02, 0x97, 0x0f, 0xc9, 0x0d, 0x2c, 0x28, 0xf1, 0x23, 0xd0, 0x31, 0x6b, 0x3f, 0x0d, 0x73})
+
+	os.RemoveAll("_testdata/tmp")
+}
+
+func Test_Make(t *testing.T) {
+	a := os.Args
+	defer func() { os.Args = a }()
+
+	os.Args = []string{
+		"./go-winres.exe",
+		"make",
+		"--arch",
+		" amd64, 386 , arm, arm64 ",
+		"--out",
+		"_testdata/tmp/make",
+		"--product-version",
+		"v42.5.3.8 alpha",
+		"--file-version",
+		"1.2.3.4.5.6.7",
+		"--in",
+		"_testdata/test.json",
+	}
+	err := os.MkdirAll("_testdata/tmp", 0666)
+	if err != nil {
+		t.Fatal(err)
+	}
+	main()
+	checkFile(t, "_testdata/tmp/make_windows_arm64.syso", []byte{0x8d, 0x2c, 0x92, 0x12, 0x56, 0xbc, 0xd0, 0x15, 0x9e, 0xde, 0x20, 0xee, 0x75, 0xed, 0xa6, 0x80})
+	checkFile(t, "_testdata/tmp/make_windows_arm.syso", []byte{0x75, 0x28, 0x81, 0x6d, 0x91, 0xf1, 0x6f, 0xee, 0x48, 0x7a, 0x8c, 0xba, 0x87, 0x8a, 0xd8, 0x6a})
+	checkFile(t, "_testdata/tmp/make_windows_amd64.syso", []byte{0x0d, 0xff, 0x1f, 0x03, 0x3d, 0xca, 0x14, 0x8e, 0x17, 0x9f, 0x3d, 0xb0, 0xb7, 0x52, 0x5f, 0x6c})
+	checkFile(t, "_testdata/tmp/make_windows_386.syso", []byte{0xe9, 0xf0, 0x06, 0x1d, 0xaf, 0xe2, 0x2e, 0xca, 0x45, 0xf1, 0x1e, 0x8d, 0x76, 0x29, 0xbe, 0x3c})
+
+	os.RemoveAll("_testdata/tmp")
+}
+
+func copyFile(t *testing.T, src, dst string) {
+	err := os.MkdirAll(filepath.Dir(dst), 0666)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	s, err := os.Open(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+
+	d, err := os.Create(dst)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Close()
+
+	io.Copy(d, s)
 }
 
 func loadJSON(t *testing.T, file string) string {

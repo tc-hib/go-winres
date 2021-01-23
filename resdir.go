@@ -11,6 +11,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -397,9 +398,9 @@ func importResources(rs *winres.ResourceSet, jsonName string) error {
 	}
 
 	for tid, t := range res {
-		for rid, r := range t {
-			for lid, res := range r {
-				typeID, resID, langID, err := idsFromStrings(tid, rid, lid)
+		for _, r := range sortedRes(t) {
+			for _, l := range sortedLang(r.langs) {
+				typeID, resID, langID, err := idsFromStrings(tid, r.id, l.id)
 				if err != nil {
 					return err
 				}
@@ -409,7 +410,7 @@ func importResources(rs *winres.ResourceSet, jsonName string) error {
 				case winres.RT_CURSOR:
 					return errors.New("cannot import RT_CURSOR resources directly, use RT_GROUP_CURSOR instead")
 				case winres.RT_GROUP_CURSOR:
-					cursor, err := loadCursor(dir, res)
+					cursor, err := loadCursor(dir, l.data)
 					if err != nil {
 						return err
 					}
@@ -418,7 +419,7 @@ func importResources(rs *winres.ResourceSet, jsonName string) error {
 						return err
 					}
 				case winres.RT_GROUP_ICON:
-					icon, err := loadIcon(dir, res)
+					icon, err := loadIcon(dir, l.data)
 					if err != nil {
 						return err
 					}
@@ -428,14 +429,14 @@ func importResources(rs *winres.ResourceSet, jsonName string) error {
 					}
 				case winres.RT_VERSION:
 					vi := version.Info{}
-					j, _ := json.Marshal(res)
+					j, _ := json.Marshal(l.data)
 					err = json.Unmarshal(j, &vi)
 					if err != nil {
 						return err
 					}
 					rs.SetVersionInfo(vi)
 				case winres.RT_BITMAP:
-					filename, ok := res.(string)
+					filename, ok := l.data.(string)
 					if !ok {
 						return errors.New(errInvalidSet)
 					}
@@ -448,7 +449,7 @@ func importResources(rs *winres.ResourceSet, jsonName string) error {
 						return err
 					}
 				case winres.RT_MANIFEST:
-					j, _ := json.Marshal(res)
+					j, _ := json.Marshal(l.data)
 					m := winres.AppManifest{}
 					err = json.Unmarshal(j, &m)
 					if err != nil {
@@ -456,7 +457,7 @@ func importResources(rs *winres.ResourceSet, jsonName string) error {
 					}
 					rs.SetManifest(m)
 				default:
-					filename, ok := res.(string)
+					filename, ok := l.data.(string)
 					if !ok {
 						return errors.New(errInvalidSet)
 					}
@@ -474,6 +475,38 @@ func importResources(rs *winres.ResourceSet, jsonName string) error {
 	}
 
 	return nil
+}
+
+type resource struct {
+	id    string
+	langs map[string]interface{}
+}
+
+type lang struct {
+	id   string
+	data interface{}
+}
+
+func sortedRes(m map[string]map[string]interface{}) []resource {
+	var res []resource
+	for id, langs := range m {
+		res = append(res, resource{id, langs})
+	}
+	sort.Slice(res, func(i, j int) bool {
+		return res[i].id < res[j].id
+	})
+	return res
+}
+
+func sortedLang(m map[string]interface{}) []lang {
+	var l []lang
+	for id, data := range m {
+		l = append(l, lang{id, data})
+	}
+	sort.Slice(l, func(i, j int) bool {
+		return l[i].id < l[j].id
+	})
+	return l
 }
 
 func loadCursor(dir string, c interface{}) (*winres.Cursor, error) {
@@ -530,7 +563,7 @@ func loadIcon(dir string, x interface{}) (*winres.Icon, error) {
 	switch x := x.(type) {
 	case string:
 		if strings.ToLower(filepath.Ext(x)) == ".ico" {
-			return loadICO(x)
+			return loadICO(filepath.Join(dir, x))
 		}
 		img, err := loadImage(filepath.Join(dir, x))
 		if err != nil {
