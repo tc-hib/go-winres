@@ -19,7 +19,7 @@
       "0409": {
         "info": {
           "0409": {
-            "FileDescription": "go-winres command line tool",
+            "FileDescription": "Command line tool for embedding resources in Go applications",
             "InternalName": "go-winres",
             "LegalCopyright": "© Thomas Combeléran",
             "OriginalFilename": "go-winres.exe",
