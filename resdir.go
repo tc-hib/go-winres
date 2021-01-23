@@ -202,6 +202,21 @@ func saveCursor(filename string, rs *winres.ResourceSet, resID winres.Identifier
 }
 
 func saveBitmap(filename string, dib []byte) error {
+	f, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	_, err = f.Write(dibToBMP(dib))
+	if err != nil {
+		return err
+	}
+
+	return f.Close()
+}
+
+func dibToBMP(dib []byte) []byte {
 	dibHeader := struct {
 		Size          uint32
 		Width         int32
@@ -216,72 +231,45 @@ func saveBitmap(filename string, dib []byte) error {
 	}{}
 
 	const (
-		BI_BITFIELD = 3
-		BI_PNG      = 4
-		BI_JPEG     = 5
+		BI_PNG  = 4
+		BI_JPEG = 5
 	)
 
 	err := binary.Read(bytes.NewReader(dib), binary.LittleEndian, &dibHeader)
-	if err != nil {
-		return errors.New("cannot read DIB header")
+	if err != nil || dibHeader.Size < 40 {
+		return dib
 	}
 
 	bitsOffset := 14 + dibHeader.Size
 	// https://docs.microsoft.com/en-us/previous-versions/dd183376(v=vs.85)
+	// Several things don't seem to be true anymore:
+	// BI_BITFIELD and ClrUsed don't seem to have any effect on 16bpp, 24bpp or 32bpp RGB bitmaps
 	if dibHeader.Compression != BI_PNG && dibHeader.Compression != BI_JPEG {
 		switch dibHeader.BitCount {
-		case 1:
-			bitsOffset += 8
-		case 4, 8:
+		case 1, 4, 8:
 			if dibHeader.ClrUsed == 0 {
-				bitsOffset += 1 << dibHeader.BitCount
-			} else {
-				bitsOffset += dibHeader.ClrUsed * 4
+				dibHeader.ClrUsed = 1 << dibHeader.BitCount
 			}
-		case 16:
-			if dibHeader.Compression == BI_BITFIELD {
-				bitsOffset += 12
-			} else {
-				bitsOffset += dibHeader.ClrUsed * 4
-			}
-		case 24:
 			bitsOffset += dibHeader.ClrUsed * 4
-		case 32:
-			if dibHeader.Compression == BI_BITFIELD {
-				bitsOffset += 12
-			}
+		case 16, 24, 32:
+			// dibHeader.ClrUsed and dibHeader.Compression are ignored on purpose.
+			// They don't seem to have any effect anymore.
+			bitsOffset += dibHeader.ClrUsed * 4
+		default:
+			return dib
 		}
 	}
 
-	f, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
+	fileSize := uint32(len(dib) + 14)
+	bmp := make([]byte, 0, fileSize)
+	buf := bytes.NewBuffer(bmp)
+	buf.Write([]byte("BM"))
+	binary.Write(buf, binary.LittleEndian, fileSize)
+	buf.Write([]byte{0, 0, 0, 0})
+	binary.Write(buf, binary.LittleEndian, bitsOffset)
+	buf.Write(dib)
 
-	fileSize := uint32(14 + len(dib))
-	_, err = f.Write([]byte{'B', 'M'})
-	if err != nil {
-		return err
-	}
-	err = binary.Write(f, binary.LittleEndian, fileSize)
-	if err != nil {
-		return err
-	}
-	_, err = f.Write([]byte{0, 0, 0, 0})
-	if err != nil {
-		return err
-	}
-	err = binary.Write(f, binary.LittleEndian, bitsOffset)
-	if err != nil {
-		return err
-	}
-	_, err = f.Write(dib)
-	if err != nil {
-		return err
-	}
-
-	return f.Close()
+	return buf.Bytes()
 }
 
 func idsToStrings(typeID, resID winres.Identifier, langID uint16) (t, r, l string) {
@@ -382,9 +370,9 @@ func exportedName(first bool, data []byte, typeID, resID winres.Identifier, lang
 		ext = "json"
 	}
 	if ext == "bin" {
-		if string(data[:8]) == "\x89PNG\r\n\x1a\n" {
-			_, s, _ := image.DecodeConfig(bytes.NewReader(data))
-			if s == "png" {
+		if len(data) > 8 && string(data[:8]) == "\x89PNG\r\n\x1a\n" {
+			cfg, s, _ := image.DecodeConfig(bytes.NewReader(data))
+			if s == "png" && cfg.ColorModel != nil && cfg.Width != 0 && cfg.Height != 0 {
 				ext = "png"
 			}
 		}
@@ -416,6 +404,10 @@ func importResources(rs *winres.ResourceSet, jsonName string) error {
 					return err
 				}
 				switch typeID {
+				case winres.RT_ICON:
+					return errors.New("cannot import RT_ICON resources directly, use RT_GROUP_ICON instead")
+				case winres.RT_CURSOR:
+					return errors.New("cannot import RT_CURSOR resources directly, use RT_GROUP_CURSOR instead")
 				case winres.RT_GROUP_CURSOR:
 					cursor, err := loadCursor(dir, res)
 					if err != nil {
