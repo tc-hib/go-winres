@@ -265,7 +265,7 @@ func cmdSimply(ctx *cli.Context) error {
 
 	rs := &winres.ResourceSet{}
 
-	err = simplySeIcon(rs, ctx)
+	err = simplySetIcon(rs, ctx)
 	if err != nil {
 		return err
 	}
@@ -525,7 +525,7 @@ func setVersions(rs *winres.ResourceSet, ctx *cli.Context) error {
 	return nil
 }
 
-func simplySeIcon(rs *winres.ResourceSet, ctx *cli.Context) error {
+func simplySetIcon(rs *winres.ResourceSet, ctx *cli.Context) error {
 	name := ctx.String(flagIconFile)
 	f, err := os.Open(name)
 	if err != nil {
