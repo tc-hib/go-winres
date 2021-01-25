@@ -50,8 +50,8 @@ You can use a `//go:generate` comment as well:
 There are other subcommands:
 
 * `go-winres simply` is a simpler `make` that does not rely on a json file.
-* `go-winres extract` extracts resources from an `exe` or a `dll`.
-* `go-winres replace` replaces resources directly in an `exe` or a `dll`.
+* `go-winres extract` extracts resources from an `exe` file or a `dll`.
+* `go-winres patch` replaces resources directly in an `exe` file or a `dll`.
   For example, to enhance a 7z self extracting archive, you may change its icon,
   and add a manifest to make it look better on high DPI screens.
 
