@@ -237,7 +237,13 @@ Here is an example JSON file containing every standard info field, a French tran
 {
   "RT_VERSION": {
     "#1": {
-      "0409": {
+      "0000": {
+        "fixed": {
+          "file_version": "1.2.3.4",
+          "product_version": "1.2.3.42",
+          "flags": "Debug,Prerelease,Patched,PrivateBuild,SpecialBuild",
+          "timestamp": "2020-12-18T23:00:00+01:00"
+        },
         "info": {
           "0409": {
             "Comments": "Comments",
@@ -252,12 +258,8 @@ Here is an example JSON file containing every standard info field, a French tran
             "ProductName": "Product",
             "ProductVersion": "1.2.3.42 beta",
             "SpecialBuild": ""
-          }
-        }
-      },
-      "040C": {
-        "info": {
-          "0409": {
+          },
+          "040C": {
             "Comments": "Commentaire",
             "CompanyName": "Compagnie",
             "FileDescription": "Une description",
