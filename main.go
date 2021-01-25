@@ -417,8 +417,14 @@ func simplySetManifest(rs *winres.ResourceSet, ctx *cli.Context) error {
 	default:
 		return errors.New("invalid manifest type: " + ctx.String(flagManifest))
 	}
-	if m != nil && ctx.Bool(flagRequireAdmin) {
+	if ctx.Bool(flagRequireAdmin) {
+		if m == nil {
+			m = &winres.AppManifest{}
+		}
 		m.ExecutionLevel = winres.RequireAdministrator
+	}
+
+	if m != nil {
 		rs.SetManifest(*m)
 	}
 
