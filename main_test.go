@@ -20,7 +20,7 @@ func Test_Extract(t *testing.T) {
 	f := makeTmpDir(t)
 	defer f()
 
-	os.Args = []string{"./go-winres.exe", "extract", "--in", "_testdata/rh.exe", "--dir", "_testdata/tmp"}
+	os.Args = []string{"./go-winres.exe", "extract", "--dir", "_testdata/tmp", "_testdata/rh.exe"}
 	main()
 	if loadJSON(t, "winres.json") != jsonRHM {
 		t.Error("json is different (json manifest)")
@@ -33,6 +33,35 @@ func Test_Extract(t *testing.T) {
 	checkFile(t, "ICON16_0000.bmp", []byte{0xd7, 0x0c, 0xa6, 0x11, 0x23, 0xf6, 0x81, 0xef, 0xaa, 0xd3, 0x01, 0x61, 0x5f, 0x3e, 0x68, 0x1a})
 }
 
+func Test_Init(t *testing.T) {
+	a := os.Args
+	defer func() { os.Args = a }()
+
+	f := makeTmpDir(t)
+	defer f()
+
+	func() {
+		f := moveToTmpDir(t)
+		defer f()
+
+		os.Args = []string{"./go-winres.exe", "init"}
+		main()
+
+		s, err := os.Stat("winres/winres.json")
+		if err != nil || s.Size() == 0 {
+			t.Fatal(err)
+		}
+		s, err = os.Stat("winres/icon.png")
+		if err != nil || s.Size() == 0 {
+			t.Fatal(err)
+		}
+		s, err = os.Stat("winres/icon16.png")
+		if err != nil || s.Size() == 0 {
+			t.Fatal(err)
+		}
+	}()
+}
+
 func Test_Extract_XMLManifest(t *testing.T) {
 	a := os.Args
 	defer func() { os.Args = a }()
@@ -40,7 +69,7 @@ func Test_Extract_XMLManifest(t *testing.T) {
 	f := makeTmpDir(t)
 	defer f()
 
-	os.Args = []string{"./go-winres.exe", "extract", "--in", "_testdata/rh.exe", "--dir", "_testdata/tmp", "--xml-manifest"}
+	os.Args = []string{"./go-winres.exe", "extract", "--dir", "_testdata/tmp", "--xml-manifest", "_testdata/rh.exe"}
 	main()
 	if loadJSON(t, "winres.json") != jsonRH {
 		t.Error("json is different (xml manifest)")
@@ -54,7 +83,7 @@ func Test_Extract_XMLManifest(t *testing.T) {
 	checkFile(t, "ICON16_0000.bmp", []byte{0xd7, 0x0c, 0xa6, 0x11, 0x23, 0xf6, 0x81, 0xef, 0xaa, 0xd3, 0x01, 0x61, 0x5f, 0x3e, 0x68, 0x1a})
 }
 
-func Test_Replace(t *testing.T) {
+func Test_Patch(t *testing.T) {
 	a := os.Args
 	defer func() { os.Args = a }()
 
@@ -62,13 +91,13 @@ func Test_Replace(t *testing.T) {
 	defer f()
 
 	copyFile(t, "_testdata/vs0.exe", "_testdata/tmp/temp.exe")
-	os.Args = []string{"./go-winres.exe", "replace", "--in", "_testdata/icons.json", "--out", "_testdata/tmp/temp.exe", "--product-version", "1.2.3.4"}
+	os.Args = []string{"./go-winres.exe", "patch", "--in", "_testdata/icons.json", "--product-version", "1.2.3.4", "_testdata/tmp/temp.exe"}
 	main()
 	checkFile(t, "temp.exe", []byte{0x50, 0x55, 0x11, 0x9e, 0x38, 0x55, 0x83, 0x72, 0x3e, 0x62, 0xa1, 0xa2, 0x0a, 0xf5, 0xed, 0x5b})
 	checkFile(t, "temp.exe.bak", []byte{0x29, 0x13, 0xa7, 0xc5, 0x4a, 0xf9, 0x47, 0xef, 0xd6, 0x4f, 0x37, 0xc5, 0x62, 0xba, 0xd4, 0x39})
 }
 
-func Test_Add(t *testing.T) {
+func Test_Patch_Add(t *testing.T) {
 	a := os.Args
 	defer func() { os.Args = a }()
 
@@ -76,7 +105,7 @@ func Test_Add(t *testing.T) {
 	defer f()
 
 	copyFile(t, "_testdata/rh.exe", "_testdata/tmp/temp.exe")
-	os.Args = []string{"./go-winres.exe", "replace", "--in", "_testdata/icons.json", "--out", "_testdata/tmp/temp.exe", "--no-backup"}
+	os.Args = []string{"./go-winres.exe", "patch", "--in", "_testdata/icons.json", "--no-backup", "_testdata/tmp/temp.exe"}
 	main()
 	checkFile(t, "temp.exe", []byte{0x08, 0x05, 0x43, 0x1d, 0x55, 0x88, 0x65, 0x30, 0xb2, 0x1f, 0xea, 0xda, 0xe9, 0xf5, 0x3b, 0x4e})
 	if _, err := os.Stat("_testdata/tmp/temp.exe.bak"); err == nil {
@@ -84,7 +113,7 @@ func Test_Add(t *testing.T) {
 	}
 }
 
-func Test_DeleteAdd(t *testing.T) {
+func Test_Patch_Replace(t *testing.T) {
 	a := os.Args
 	defer func() { os.Args = a }()
 
@@ -93,7 +122,7 @@ func Test_DeleteAdd(t *testing.T) {
 
 	copyFile(t, "_testdata/rh.exe", "_testdata/tmp/temp.exe")
 
-	os.Args = []string{"./go-winres.exe", "replace", "--in", "_testdata/test.json", "--out", "_testdata/tmp/temp.exe", "--delete", "--file-version", "1.2"}
+	os.Args = []string{"./go-winres.exe", "patch", "--in", "_testdata/test.json", "--delete", "--file-version", "1.2", "_testdata/tmp/temp.exe"}
 	main()
 	checkFile(t, "temp.exe", []byte{0x60, 0xa6, 0x65, 0x1e, 0xfb, 0xca, 0x4f, 0x60, 0xde, 0x93, 0x0d, 0x78, 0x41, 0x3b, 0x45, 0x70})
 	checkFile(t, "temp.exe.bak", []byte{0x79, 0xbc, 0x0f, 0x27, 0x2b, 0x3f, 0x82, 0x69, 0xfa, 0xc1, 0x42, 0x1d, 0xc7, 0xdb, 0x68, 0x6c})
@@ -115,9 +144,9 @@ func Test_GitTag(t *testing.T) {
 
 		createTmpGitTag(t, "v1.42.3.24")
 
-		os.Args = []string{"./go-winres.exe", "replace", "--in", "../icons.json", "--out", "temp1.exe", "--file-version", "git-tag"}
+		os.Args = []string{"./go-winres.exe", "patch", "--in", "../icons.json", "--file-version", "git-tag", "temp1.exe"}
 		main()
-		os.Args = []string{"./go-winres.exe", "replace", "--in", "../test.json", "--out", "temp2.exe", "--product-version", "git-tag"}
+		os.Args = []string{"./go-winres.exe", "patch", "--in", "../test.json", "--product-version", "git-tag", "temp2.exe"}
 		main()
 	}()
 
@@ -183,7 +212,7 @@ func Test_Simply_PNGIcon(t *testing.T) {
 		"icon.png",
 	}
 	main()
-	checkFile(t, "rsrc.syso", []byte{0x6d, 0xc7, 0xf7, 0x9a, 0xe3, 0xc5, 0xa0, 0x37, 0x36, 0x31, 0x2a, 0x87, 0x51, 0xf3, 0x2e, 0x28})
+	checkFile(t, "rsrc.syso", []byte{0x8e, 0xc8, 0xe5, 0x44, 0x8e, 0x93, 0xd2, 0xab, 0x84, 0x10, 0x67, 0x16, 0xac, 0x70, 0x1a, 0xad})
 }
 
 func Test_Make(t *testing.T) {

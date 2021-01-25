@@ -89,14 +89,16 @@ func main() {
 		Description: "A tool for embedding resources in Windows executables",
 		Commands: []*cli.Command{
 			{
-				Name:   "init",
-				Usage:  "Create an initial ./winres/winres.json",
-				Action: cmdInit,
+				Name:      "init",
+				Usage:     "Create an initial ./winres/winres.json",
+				Action:    cmdInit,
+				ArgsUsage: " ",
 			},
 			{
-				Name:   "make",
-				Usage:  "Make syso files for the \"go build\" command",
-				Action: cmdMake,
+				Name:      "make",
+				Usage:     "Make syso files for the \"go build\" command",
+				Action:    cmdMake,
+				ArgsUsage: " ",
 				Flags: append([]cli.Flag{
 					&cli.StringFlag{
 						Name:      flagInput,
@@ -108,9 +110,10 @@ func main() {
 					commonMakeFlags...),
 			},
 			{
-				Name:   "simply",
-				Usage:  "Make syso files for the \"go build\" command (simplified)",
-				Action: cmdSimply,
+				Name:      "simply",
+				Usage:     "Make syso files for the \"go build\" command (simplified)",
+				Action:    cmdSimply,
+				ArgsUsage: " ",
 				Flags: append(commonMakeFlags, []cli.Flag{
 					&cli.StringFlag{
 						Name:  flagManifest,
@@ -147,16 +150,11 @@ func main() {
 				}...),
 			},
 			{
-				Name:   "extract",
-				Usage:  "Extract all resources from an executable",
-				Action: cmdExtract,
+				Name:      "extract",
+				Usage:     "Extract all resources from an executable",
+				Action:    cmdExtract,
+				ArgsUsage: "source_file.exe",
 				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:      flagInput,
-						Usage:     "name of the executable file (exe, dll)",
-						Required:  true,
-						TakesFile: true,
-					},
 					&cli.StringFlag{
 						Name:  flagOutputDir,
 						Usage: "name of the output directory",
@@ -170,16 +168,11 @@ func main() {
 				},
 			},
 			{
-				Name:   "replace",
-				Usage:  "Replace resources in an executable",
-				Action: cmdReplace,
+				Name:      "patch",
+				Usage:     "Replace resources in an executable file (exe, dll)",
+				Action:    cmdPatch,
+				ArgsUsage: "target_file.exe",
 				Flags: append([]cli.Flag{
-					&cli.StringFlag{
-						Name:      flagOutput,
-						Usage:     "name of the executable file (exe, dll)",
-						Required:  true,
-						TakesFile: true,
-					},
 					&cli.StringFlag{
 						Name:  flagInput,
 						Usage: "name of the input json file",
@@ -286,7 +279,11 @@ func cmdSimply(ctx *cli.Context) error {
 }
 
 func cmdExtract(ctx *cli.Context) error {
-	f, err := os.Open(ctx.String(flagInput))
+	if ctx.NArg() != 1 {
+		cli.ShowSubcommandHelpAndExit(ctx, 1)
+	}
+
+	f, err := os.Open(ctx.Args().Get(0))
 	if err != nil {
 		return err
 	}
@@ -310,8 +307,12 @@ func cmdExtract(ctx *cli.Context) error {
 	return nil
 }
 
-func cmdReplace(ctx *cli.Context) error {
-	exe := ctx.String(flagOutput)
+func cmdPatch(ctx *cli.Context) error {
+	if ctx.NArg() != 1 {
+		cli.ShowSubcommandHelpAndExit(ctx, 1)
+	}
+
+	exe := ctx.Args().Get(0)
 
 	in, err := os.Open(exe)
 	if err != nil {
