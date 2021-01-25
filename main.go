@@ -556,12 +556,18 @@ func simplySetIcon(rs *winres.ResourceSet, ctx *cli.Context) error {
 	var icon *winres.Icon
 	if strings.ToLower(filepath.Ext(name)) == ".ico" {
 		icon, err = winres.LoadICO(f)
+		if err != nil {
+			return err
+		}
 	} else {
 		img, _, err := image.Decode(f)
 		if err != nil {
 			return err
 		}
 		icon, err = winres.NewIconFromResizedImage(img, nil)
+		if err != nil {
+			return err
+		}
 	}
 
 	return rs.SetIcon(winres.ID(1), icon)
