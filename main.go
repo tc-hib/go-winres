@@ -473,22 +473,17 @@ func setVersions(rs *winres.ResourceSet, ctx *cli.Context) error {
 		return nil
 	}
 
-	var tag string
 	if fileVersion == gitTag || prodVersion == gitTag {
-		w := strings.Builder{}
-		cmd := exec.Command("git", "describe", "--tags")
-		cmd.Stdout = &w
-		err := cmd.Run()
+		tag, err := getGitTag()
 		if err != nil {
 			return err
 		}
-		tag = strings.TrimSpace(w.String())
-	}
-	if fileVersion == gitTag {
-		fileVersion = tag
-	}
-	if prodVersion == gitTag {
-		prodVersion = tag
+		if fileVersion == gitTag {
+			fileVersion = tag
+		}
+		if prodVersion == gitTag {
+			prodVersion = tag
+		}
 	}
 
 	var (
@@ -533,6 +528,17 @@ func setVersions(rs *winres.ResourceSet, ctx *cli.Context) error {
 	}
 
 	return nil
+}
+
+func getGitTag() (string, error) {
+	w := strings.Builder{}
+	cmd := exec.Command("git", "describe", "--tags")
+	cmd.Stdout = &w
+	err := cmd.Run()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(w.String()), nil
 }
 
 func simplySetIcon(rs *winres.ResourceSet, ctx *cli.Context) error {
