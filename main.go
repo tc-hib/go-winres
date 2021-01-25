@@ -11,8 +11,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	_ "embed"
-
 	"github.com/tc-hib/winres"
 	"github.com/tc-hib/winres/version"
 	"github.com/urfave/cli/v2"
@@ -593,12 +591,6 @@ func writeObjectFile(rs *winres.ResourceSet, name string, arch winres.Arch) erro
 
 	return f.Close()
 }
-
-//go:embed icon.png
-var initIcon []byte
-
-//go:embed icon16.png
-var initIcon16 []byte
 
 var cliManifest = winres.AppManifest{}
 
