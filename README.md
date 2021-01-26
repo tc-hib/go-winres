@@ -137,9 +137,11 @@ You can find other language IDs [there](https://docs.microsoft.com/en-us/openspe
       "040C": "move_FR.cur"
     },
     "#1": {
-      "image": "cross.png",
-      "x": 16,
-      "y": 16
+      "0000": {
+        "image": "cross.png",
+        "x": 16,
+        "y": 16
+      }
     }
   }
 }
@@ -147,9 +149,9 @@ You can find other language IDs [there](https://docs.microsoft.com/en-us/openspe
 
 This example contains 3 cursors:
 
-* `"ARROW"` contains two images (one for higher DPI).
-* `"MOVE"` uses cur files directly. It is different in French.
-* `1` contains one image.
+* `"ARROW"` contains two images (one for higher DPI). It is a json array.
+* `"MOVE"` uses cur files directly. It is different in French. It is a string.
+* `1` contains one image. It is an object.
 
 When a cursor is made with a png file, you have to provide the coordinates of the "hot spot", that is, the pixel that
 clicks.
