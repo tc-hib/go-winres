@@ -37,7 +37,7 @@ Thanks to it, `go build` knows it should not include that object in a Linux or 3
 The `--file-version` and `--product-version` flags can take a special value: `git-tag`.
 This will retrieve the current tag with `git describe --tags` and add it to the file properties of the executable.
 
-### `go generate`
+### Using `go generate`
 
 You can use a `//go:generate` comment as well:
 
@@ -64,7 +64,7 @@ The JSON file follows this hierarchy:
         * Language ID (e.g. `"0409"` for en-US)
             * Actual resource: a filename or a json structure
 
-Standard resource type can be found [there](https://docs.microsoft.com/en-us/windows/win32/menurc/resource-types). But
+Standard resource types can be found [there](https://docs.microsoft.com/en-us/windows/win32/menurc/resource-types). But
 please never use `RT_ICON` or `RT_CURSOR`. Use `RT_GROUP_ICON` and `RT_GROUP_CURSOR` instead.
 
 ### Icon JSON
@@ -97,7 +97,7 @@ This example contains 3 icons:
 * `"OTHER"`
 * `42`
 
-Windows Explorer will display `"APP"` because it is the first one. Icons are order by name in case sensitive ascending
+Windows Explorer will display `"APP"` because it is the first one. Icons are sorted by name in case sensitive ascending
 order, then by ID.
 
 `42` is an ID, not a name, this is why it comes last.
@@ -194,7 +194,7 @@ The manifest should be defined as resource `1` with language `0409`.
 
 All boolean values default to `false`.
 
-It is recommended to omit `name` and `version` if your program is a plain application, not meant to be a side-by-side
+It is recommended to omit `identity` if your program is a plain application, not meant to be a side-by-side
 dependency.
 
 ##### Values for `"execution-level"`:

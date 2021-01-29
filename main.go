@@ -638,7 +638,11 @@ const initJSON = `{
   },
   "RT_VERSION": {
     "#1": {
-      "0409": {
+      "0000": {
+        "fixed": {
+          "file_version": "0.0.0.0",
+          "product_version": "0.0.0.0"
+        },
         "info": {
           "0409": {
             "Comments": "",
