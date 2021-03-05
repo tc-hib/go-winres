@@ -48,6 +48,11 @@ const (
 	manifestCLI  = "cli"
 	manifestGUI  = "gui"
 
+	flagAuthenticode = "authenticode"
+
+	authenticodeIgnore = "ignore"
+	authenticodeRemove = "remove"
+
 	gitTag = "git-tag"
 )
 
@@ -188,6 +193,11 @@ func main() {
 						Usage: "don't leave a copy of the original executable",
 						Value: false,
 					},
+					&cli.StringFlag{
+						Name:  flagAuthenticode,
+						Usage: `specify what to do with signed executables: "ignore" or "remove" signature`,
+						Value: "",
+					},
 				}, versionFlags...),
 			},
 		},
@@ -320,6 +330,20 @@ func cmdPatch(ctx *cli.Context) error {
 	}
 	defer in.Close()
 
+	signed, err := winres.IsSignedEXE(in)
+	if err != nil {
+		return err
+	}
+	if signed {
+		switch ctx.String(flagAuthenticode) {
+		case authenticodeRemove, authenticodeIgnore:
+		default:
+			return fmt.Errorf(`Cannot patch a signed file.
+
+You might want to use --%[1]s=%[2]s or --%[1]s=%[3]s to either remove or ignore the code signature.`, flagAuthenticode, authenticodeRemove, authenticodeIgnore)
+		}
+	}
+
 	var rs *winres.ResourceSet
 
 	if ctx.Bool(flagDelete) {
@@ -347,7 +371,14 @@ func cmdPatch(ctx *cli.Context) error {
 	}
 	defer out.Close()
 
-	err = rs.WriteToEXE(out, in)
+	switch ctx.String(flagAuthenticode) {
+	case authenticodeRemove:
+		err = rs.WriteToEXE(out, in, winres.WithAuthenticode(winres.RemoveSignature))
+	case authenticodeIgnore:
+		err = rs.WriteToEXE(out, in, winres.WithAuthenticode(winres.IgnoreSignature))
+	default:
+		err = rs.WriteToEXE(out, in)
+	}
 	if err != nil {
 		return err
 	}
