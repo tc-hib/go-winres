@@ -593,14 +593,6 @@ func writeObjectFile(rs *winres.ResourceSet, name string, arch winres.Arch) erro
 	return f.Close()
 }
 
-var cliManifest = winres.AppManifest{}
-
-var guiManifest = winres.AppManifest{
-	Identity:            winres.AssemblyIdentity{},
-	DPIAwareness:        winres.DPIPerMonitorV2,
-	UseCommonControlsV6: true,
-}
-
 // language=json
 const initJSON = `{
   "RT_GROUP_ICON": {
