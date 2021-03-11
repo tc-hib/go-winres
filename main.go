@@ -56,7 +56,7 @@ const (
 	gitTag = "git-tag"
 )
 
-//go:generate go-winres make --product-version=git-tag
+//go:generate go-winres make --product-version=git-tag --file-version=git-tag
 
 func main() {
 	versionFlags := []cli.Flag{
