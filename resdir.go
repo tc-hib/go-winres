@@ -449,13 +449,25 @@ func importResources(rs *winres.ResourceSet, jsonName string) error {
 						return err
 					}
 				case winres.RT_MANIFEST:
-					j, _ := json.Marshal(l.data)
-					m := winres.AppManifest{}
-					err = json.Unmarshal(j, &m)
-					if err != nil {
-						return err
+					switch val := l.data.(type) {
+					case string:
+						data, err := ioutil.ReadFile(filepath.Join(dir, val))
+						if err != nil {
+							return err
+						}
+						err = rs.Set(typeID, resID, langID, data)
+						if err != nil {
+							return err
+						}
+					default:
+						j, _ := json.Marshal(val)
+						m := winres.AppManifest{}
+						err = json.Unmarshal(j, &m)
+						if err != nil {
+							return err
+						}
+						rs.SetManifest(m)
 					}
-					rs.SetManifest(m)
 				default:
 					filename, ok := l.data.(string)
 					if !ok {
