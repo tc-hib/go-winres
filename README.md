@@ -14,7 +14,7 @@ You might want to directly use winres as a library too: [github.com/tc-hib/winre
 To install the go-winres command, run:
 
 ```shell
-go install github.com/tc-hib/go-winres@lastest
+go install github.com/tc-hib/go-winres@latest
 ```
 
 ## Usage
