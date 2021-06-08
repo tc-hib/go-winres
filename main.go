@@ -276,7 +276,10 @@ func cmdSimply(ctx *cli.Context) error {
 		return err
 	}
 
-	simplySetVersionInfo(rs, ctx)
+	err = simplySetVersionInfo(rs, ctx)
+	if err != nil {
+		return err
+	}
 
 	for _, t := range targets {
 		err = writeObjectFile(rs, t.name, t.arch)
@@ -461,7 +464,7 @@ func simplySetManifest(rs *winres.ResourceSet, ctx *cli.Context) error {
 	return nil
 }
 
-func simplySetVersionInfo(rs *winres.ResourceSet, ctx *cli.Context) {
+func simplySetVersionInfo(rs *winres.ResourceSet, ctx *cli.Context) error {
 	var (
 		vi version.Info
 		b  bool
@@ -483,18 +486,25 @@ func simplySetVersionInfo(rs *winres.ResourceSet, ctx *cli.Context) {
 		vi.Set(version.LangDefault, version.LegalCopyright, s)
 		b = true
 	}
-	if s := ctx.String(flagFileVersion); s != "" {
-		vi.SetFileVersion(s)
+
+	fileVersion, prodVersion, err := getInputVersions(ctx)
+	if err != nil {
+		return err
+	}
+	if fileVersion != "" {
+		vi.SetFileVersion(fileVersion)
 		b = true
 	}
-	if s := ctx.String(flagProductVersion); s != "" {
-		vi.SetProductVersion(s)
+	if prodVersion != "" {
+		vi.SetProductVersion(prodVersion)
 		b = true
 	}
 
 	if b {
 		rs.SetVersionInfo(vi)
 	}
+
+	return nil
 }
 
 type target struct {
@@ -502,30 +512,34 @@ type target struct {
 	name string
 }
 
+func getInputVersions(ctx *cli.Context) (fileVersion string, prodVersion string, err error) {
+	fileVersion = ctx.String(flagFileVersion)
+	prodVersion = ctx.String(flagProductVersion)
+	if fileVersion != gitTag && prodVersion != gitTag {
+		return
+	}
+	tag, err := getGitTag()
+	if err != nil {
+		fileVersion = ""
+		prodVersion = ""
+		return
+	}
+	if fileVersion == gitTag {
+		fileVersion = tag
+	}
+	if prodVersion == gitTag {
+		prodVersion = tag
+	}
+	return
+}
+
 func setVersions(rs *winres.ResourceSet, ctx *cli.Context) error {
-	fileVersion := ctx.String(flagFileVersion)
-	prodVersion := ctx.String(flagProductVersion)
-	if fileVersion == "" && prodVersion == "" {
-		return nil
+	fileVersion, prodVersion, err := getInputVersions(ctx)
+	if err != nil {
+		return err
 	}
 
-	if fileVersion == gitTag || prodVersion == gitTag {
-		tag, err := getGitTag()
-		if err != nil {
-			return err
-		}
-		if fileVersion == gitTag {
-			fileVersion = tag
-		}
-		if prodVersion == gitTag {
-			prodVersion = tag
-		}
-	}
-
-	var (
-		err  error
-		done bool
-	)
+	done := false
 	rs.WalkType(winres.RT_VERSION, func(resID winres.Identifier, langID uint16, data []byte) bool {
 		var vi *version.Info
 		vi, err = version.FromBytes(data)

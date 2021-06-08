@@ -193,6 +193,31 @@ func Test_Simply(t *testing.T) {
 	checkFile(t, "simply_windows_386.syso", []byte{0xa0, 0x02, 0x97, 0x0f, 0xc9, 0x0d, 0x2c, 0x28, 0xf1, 0x23, 0xd0, 0x31, 0x6b, 0x3f, 0x0d, 0x73})
 }
 
+func Test_SimplyGitTag(t *testing.T) {
+	a := os.Args
+	defer func() { os.Args = a }()
+
+	f := makeTmpDir(t)
+	defer f()
+
+	copyFile(t, "_testdata/cur-32x64.png", "_testdata/tmp/icon.png")
+
+	func() {
+		f := moveToTmpDir(t)
+		defer f()
+
+		createTmpGitTag(t, "v1.42.3.24")
+
+		os.Args = []string{"./go-winres.exe", "simply", "--arch", "amd64", "--file-version", "git-tag", "--icon", "icon.png"}
+		main()
+		os.Args = []string{"./go-winres.exe", "simply", "--arch", "arm64", "--product-version", "git-tag", "--icon", "icon.png"}
+		main()
+	}()
+
+	checkFile(t, "rsrc_windows_amd64.syso", []byte{0xcd, 0xc5, 0x45, 0x8c, 0x68, 0xe0, 0x00, 0x50, 0xda, 0x83, 0xe9, 0x4d, 0xf6, 0x0a, 0xba, 0x9f})
+	checkFile(t, "rsrc_windows_arm64.syso", []byte{0x9f, 0xa4, 0x6c, 0x2a, 0x4d, 0xaf, 0xf8, 0xac, 0x61, 0x9e, 0x85, 0x3c, 0x50, 0x6a, 0xd8, 0xbe})
+}
+
 func Test_Simply_PNGIcon(t *testing.T) {
 	a := os.Args
 	defer func() { os.Args = a }()
