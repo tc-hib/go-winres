@@ -90,8 +90,8 @@ func main() {
 	}, versionFlags...)
 
 	app := cli.App{
-		Name:        "go-winres",
-		Description: "A tool for embedding resources in Windows executables",
+		Name:  "go-winres",
+		Usage: "A tool for embedding resources in Windows executables",
 		Commands: []*cli.Command{
 			{
 				Name:      "init",
