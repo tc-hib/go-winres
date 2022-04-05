@@ -586,7 +586,7 @@ func getGitTag() (string, error) {
 	cmd.Stdout = &w
 	err := cmd.Run()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed resolving git tag: %w", err)
 	}
 	return strings.TrimSpace(w.String()), nil
 }
