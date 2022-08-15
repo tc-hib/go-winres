@@ -325,5 +325,5 @@ Many thanks to [akavel](https://github.com/akavel) for his help.
 
 This project uses these very helpful libs:
 
-- [nfnt/resize](github.com/nfnt/resize) - pure Go image resizing
-- [urfave/cli](github.com/urfave/cli) - makes building a CLI easier
+- [nfnt/resize](https://github.com/nfnt/resize) - pure Go image resizing
+- [urfave/cli](https://github.com/urfave/cli) - makes building a CLI easier
