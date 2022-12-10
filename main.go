@@ -209,19 +209,19 @@ func main() {
 }
 
 func cmdInit(_ *cli.Context) error {
-	err := os.MkdirAll(filepath.Dir(defaultJSONFile), 0666)
+	err := os.MkdirAll(filepath.Dir(defaultJSONFile), 0755)
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(defaultJSONFile, []byte(initJSON), 0666)
+	err = ioutil.WriteFile(defaultJSONFile, []byte(initJSON), 0644)
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(defaultIconFile, initIcon, 0666)
+	err = ioutil.WriteFile(defaultIconFile, initIcon, 0644)
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(defaultIcon16File, initIcon16, 0666)
+	err = ioutil.WriteFile(defaultIcon16File, initIcon16, 0644)
 	if err != nil {
 		return err
 	}
@@ -310,7 +310,7 @@ func cmdExtract(ctx *cli.Context) error {
 	f.Close()
 
 	out := ctx.String(flagOutputDir)
-	err = os.MkdirAll(out, 0666)
+	err = os.MkdirAll(out, 0755)
 	if err != nil {
 		return err
 	}
