@@ -586,6 +586,10 @@ func getGitTag() (string, error) {
 	cmd.Stdout = &w
 	err := cmd.Run()
 	if err != nil {
+		// git describe --tags returns exit code 128 if none found.
+		if cmd.ProcessState.ExitCode() == 128 {
+			return "0.0.0.0", nil
+		}
 		return "", fmt.Errorf("failed resolving git tag: %w", err)
 	}
 	return strings.TrimSpace(w.String()), nil
